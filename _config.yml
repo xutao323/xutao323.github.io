@@ -1,4 +1,5 @@
 theme: jekyll-theme-cayman
 title: Tao Xu's homepage
 description: For blog posts
-baseurl: /blog
+baseurl: "/blog"
+url: "https://xutao323.github.io/"
