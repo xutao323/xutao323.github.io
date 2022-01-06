@@ -1,3 +1,4 @@
 theme: jekyll-theme-cayman
 title: Tao Xu's homepage
-description: For blog post
+description: For blog posts
+baseurl: /blog
