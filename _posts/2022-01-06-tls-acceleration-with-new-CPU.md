@@ -1,8 +1,8 @@
 ---
 layout: post
 title: "TLS acceleration with new CPU"
-date: 2021-01-06
-author: Tao Xu (xutao323)
+date: 2022-01-06
+author: Tao Xu
 ---
 
 All top cloud service providers (CSP) have announced 3rd gen Intel® Xeon® CPU (code name Ice Lake-SP). It came with a built-in feature [Crypto-NI](https://www.intel.com/content/dam/develop/external/us/en/documents/Nginx-HTTPs-with-Crypto-NI-Tuning-Guide-on-3rd-Generation-Intel-Xeon-Scalable-Processors.pdf) to accelerate crypto workloads with new AVX512 instructions. Let's use bcc/bpftrace tools to analyze the use case in TLS acceleration and see how it works.
@@ -22,7 +22,7 @@ Some application may use OpenSSL speed command to run crypto test as a quick met
 
 Ice Lake added new AVX512 instructions (plus SHA extension or SHA-NI) for [crypto acceleration](https://www.intel.com/content/www/us/en/architecture-and-technology/crypto-acceleration-in-xeon-scalable-processors-wp.html). Normally application software needs to change to use SIMD intrinsics. Or use the [multi-buffer](https://github.com/intel/ipp-crypto/blob/develop/sources/ippcp/crypto_mb/Readme.md) lib which provides batch submission of multiple requests and parallel async processing based on new instruction set. 
 
-![CPU AVX512 support](/images/TLS_AVX512.png)
+<img src="/images/TLS_AVX512.png" width="300">
 
 To best knowledge at the time of writing, next gen CPU (code name Sapphire Rapids or SPR) is planned with Crypto-NI to succeed Ice Lake, so we could expect this built-in crypto acceleration on future Xeon CPU. Furthermore, SPR would provide several types of on-die [accelerators](https://www.anandtech.com/show/16921/intel-sapphire-rapids-nextgen-xeon-scalable-gets-a-tiling-upgrade) including new QAT.
 
@@ -36,7 +36,7 @@ BTW, similar optimization was added in Linux Kernel crypto as well. The [patch](
 
 Ice Lake CPU is officially supported in CentOS/RHEL 8.2 or some [Linux](https://github.com/alibaba/cloud-kernel/releases/tag/ck-release-17) developed by CSP. Thanks to previous offload solutions, system default OpenSSL 1.1.1 already support async SSL and engines without changing OpenSSL binary. This is very helpful as changing system OpenSSL has big compatibility [issue](https://access.redhat.com/solutions/2728111).
 
-![TLS software stacks](/images/TLS_stacks.png)
+<img src="/images/TLS_stacks.png" width="600">
 
 Above shows 3 approaches for HTTPS TLS handshake which will be analyzed below. General CPU path is most common with no special hardware help, it can still benefit from more powerful CPU though. Ice Lake acceleration path is the approach described above using new CPU instructions. QAT offload path is the original TLS offload approach using dedicated hardware.
 
@@ -64,7 +64,7 @@ Use the newly added [bcc](https://github.com/iovisor/bcc/commit/613279e3be36d78f
 
 This is the default approach and baseline for comparison, TLS performance depends on `libcrypto.so` from OpenSSL. According to [nginx doc](https://www.nginx.com/blog/nginx-ssl-performance/): "You can use the openssl speed rsa command to measure how many RSA 2048‑bit signs a single core can sustain per second. As a rough estimate, the number of full SSL handshakes (using ECDHE‑RSA) that a single core can sustain is between 45% and 60% of that value."
 
-![general CPU approach](/images/TLS_path1.png)
+<img src="/images/TLS_path1.png" width="500">
 
 Existing bcc/sslsniff tool can sniff the plaintext and ciphertext in `SSL_read/write`. A verbose option is added to trace `SSL_do_handshake()` before initial `SSL_read/write` which is the crypto overhead in TLS handshake.
 
@@ -166,7 +166,7 @@ Actually use 1 thread with 10 connections in wrk client is enough to saturate on
 
 This is the CPU acceleration approach by using async SSL and qatengine in OpenSSL, originally designed for QAT offload, to accelerate those CPU intensive crypto tasks in TLS handshake. Use multi-buffer (MB) style functions in `libcrypto_mb.so` to take advantage of new AVX512 on Ice Lake.
 
-![Ice Lake acceleration approach](/images/TLS_path2.png)
+<img src="/images/TLS_path2.png" width="600">
 
 Same as the steps in baseline sync approach, use bcc/sslsniff first to trace single handshake, and then use bpftrace/sslsnoop to break down the latency, and finally use bpftrace/ssllatency to compare the statistical summary in wrk benchmark.
 
@@ -330,7 +330,7 @@ This is the original SSL offload approach from 1st gen QAT on Skylake. I can't f
 
 It's sharing same upper layer with Ice Lake multi-buffer approach, so bcc/bpftrace tools can also be useful. More overhead is expected as it needs in-kernel PCIe driver with extra CPU memory resource for ioctl and polling. As dedicated hardware (yet to be on-die on SPR), there's PCIe bandwidth limit and it needs maintenance like fallback to CPU approach back and forth. While QAT can co-exist with built-in AVX512 acceleration, it's maybe more useful on IPU with limited processor or compression offload like in QZFS.
 
-![QAT offload path](/images/TLS_path3.png)
+<img src="/images/TLS_path3.png" width="600">
 
 Thanks to previous QAT offload solutions (again), OpenSSL added support in 1.1.0 version. And nginx fork [tengine](http://tengine.taobao.org/document/tengine_qat_ssl.html) already support async SSL long ago, it's running in many CSP products for years. Note the nginx we tested above is [asynch_mode_nginx](https://github.com/intel/asynch_mode_nginx) developed by intel.
 
@@ -353,13 +353,13 @@ Below is a raw crypto performance comparison. Take AES-256 as an example: no acc
 
 For public-key RSA and EC, no acceleration Ice Lake is almost same as Cascade Lake. With Ice Lake crypto acceleration, RSA and EC can be 2x~5x better. We can also observe the RSA sign/s bottleneck, just switch to ECDSA can be more than 10x better without hardware change.
 
-![OpenSSL speed test](/images/TLS_openssl.png)
+<img src="/images/TLS_openssl.png" width="700">
 
 ### b. Nginx/Tengine
 
 Below is the comparison in typical user application TLS handshake: Nginx (asynch_mode_nginx v0.4.6) on the left, Tengine (v2.3.3) on the right, results are close. As mentioned early, simplify the scenario by using localhost, bind nginx/tengine on one CPU socket, and use the other for wrk client. TLS cipher suite is `AES256-GCM-SHA384`, `ECDHE-RSA-AES256-GCM-SHA384`, `ECDHE-ECDSA-AES256-GCM-SHA384`.
 
-![Nginx data](/images/TLS_nginx.png)![Tengine data](/images/TLS_tengine.png)
+<img src="/images/TLS_nginx.png" width="343"><img src="/images/TLS_tengine.png" width="370">
 
 For RSA based TLS, no acceleration Ice Lake is almost same as Cascade Lake with ~10% per core improvement. And accelerated Ice Lake gets 3x better. This makes sense as RSA is generally the bottleneck. [Nginx doc](https://www.nginx.com/blog/nginx-ssl-performance/) mentioned 45%~60% correlation ratio between raw openssl RSA speed and TLS handshake performance, it's based on empirical data on older CPU. bcc/bpftrace tool showed libcrypto.so RSA takes 0.7ms in the total 1.1ms handshake time. By accelerating RSA, per core TLS performance improved 3x times.
 
