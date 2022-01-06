@@ -1,37 +1,8 @@
-## Welcome to GitHub Pages
+## Blogs
+2022/01/06 - TLS acceleration with new CPU
 
-You can use the [editor on GitHub](https://github.com/xutao323/xutao323.github.io/edit/main/index.md) to maintain and preview the content for your website in Markdown files.
+## About
+I'm currently a system performance engineer at Alibaba Cloud OS team. Previously, I spent most time developing storage products at EMC and all flash startup. [Here](https://www.linkedin.com/in/tao-xu-49670733/) is my LinkedIn page.
 
-Whenever you commit to this repository, GitHub Pages will run [Jekyll](https://jekyllrb.com/) to rebuild the pages in your site, from the content in your Markdown files.
-
-### Markdown
-
-Markdown is a lightweight and easy-to-use syntax for styling your writing. It includes conventions for
-
-```markdown
-Syntax highlighted code block
-
-# Header 1
-## Header 2
-### Header 3
-
-- Bulleted
-- List
-
-1. Numbered
-2. List
-
-**Bold** and _Italic_ and `Code` text
-
-[Link](url) and ![Image](src)
-```
-
-For more details see [Basic writing and formatting syntax](https://docs.github.com/en/github/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax).
-
-### Jekyll Themes
-
-Your Pages site will use the layout and styles from the Jekyll theme you have selected in your [repository settings](https://github.com/xutao323/xutao323.github.io/settings/pages). The name of this theme is saved in the Jekyll `_config.yml` configuration file.
-
-### Support or Contact
-
-Having trouble with Pages? Check out our [documentation](https://docs.github.com/categories/github-pages-basics/) or [contact support](https://support.github.com/contact) and we’ll help you sort it out.
+## Contact
+xutao323@gmail.com OR xutao323@hotmail.com
