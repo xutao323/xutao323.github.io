@@ -13,7 +13,7 @@ title: Tao Xu's homepage
 
 ## About
 
-I'm currently a system performance engineer at Alibaba Cloud OS team. Previously, I spent most time developing storage products at EMC and all flash startup. [Here](https://www.linkedin.com/in/tao-xu-49670733/) is my LinkedIn page.
+I'm a system performance engineer focusing on various CPU platform tunings. Rcently work at Sanechips and Alibaba Cloud OS team. Previously, I spent most time developing storage products at EMC and all flash startup. [Here](https://www.linkedin.com/in/tao-xu-49670733/) is my LinkedIn page.
 
 ## Contact
 
