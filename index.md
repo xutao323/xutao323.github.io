@@ -13,9 +13,9 @@ title: Tao Xu's homepage
 
 ## About
 
-I'm a system performance engineer focusing on various CPU platform tunings. Rcently work at Sanechips and Alibaba Cloud OS team. Previously, I spent most time developing storage products at EMC and all flash startup. [Here](https://www.linkedin.com/in/tao-xu-49670733/) is my LinkedIn page.
+Hello, I'm Tao Xu, a system performance engineer and storage developer. Here is my personal blog.
 
 ## Contact
 
-xutao323[AT]gmail.com OR xutao323[AT]hotmail.com
+xutao323[AT]gmail.com OR xutao323[AT]outlook.com
 
