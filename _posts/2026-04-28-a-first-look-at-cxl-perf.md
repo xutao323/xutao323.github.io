@@ -4,23 +4,22 @@ title: "A first look at CXL 2.0 memory performance"
 date: 2026-04-28
 author: Tao Xu
 ---
-Recently, I got two CXL 2.0 memory expander samples utilizing SCM media, neither DRAM nor NAND, in an E3.S form factor. CXL SCM is an interesting combination of two new hardware technologies. Below is an initial performance analysis comparing CXL SCM with local DRAM.
+Recently, I got two CXL 2.0 memory expander samples utilizing SCM media, neither DRAM nor NAND, in an E3.S form factor. CXL SCM is an interesting combination of two new hardware technologies. Below is an initial performance analysis comparing CXL SCM with system DRAM.
 
 TL;DR
-System level benchmarks show that the CXL SCM device is **3x** of local DRAM in load/access latency with **6.7GB/s** throughput. For real user workload, redis-benchmark on CXL memory shows around **half** throughput of local DRAM.
+System level benchmarks show that the CXL SCM device is **3x** of system DRAM in load/access latency with **6.7GB/s** throughput. For real user workload, redis-benchmark on CXL memory shows around **half** throughput of DRAM baseline.
 
-While SCM sits between DRAM and NAND, the CXL SCM device benefits from CXL low latency interface and is byte-addressible like system memory (64B cacheline). Its 660ns access/load latency is close to system memory, while its 6.7GB/s throughput is better than storage device (512B/4K sector).
-
-The low cost of SCM makes it a compelling alternative for large-scale caching. Additionally, the flexibility of runtime conversion between system memory and DAX storage is extra valuable for efficient resource utilization. The focus in this blog is system memory scenario.
+While SCM sits between DRAM and NAND, the CXL SCM device benefits from CXL low latency interface and is byte-addressible like system memory (64B cacheline). The low cost makes it a compelling alternative for large-scale caching. Additionally, the flexibility of runtime conversion between system memory and DAX storage is extra valuable. The focus in this blog is system memory scenario.
 
 ## 1. Platform
+
 | HW | Config | Notes |
 | :--- | :--- | :--- |
 | CPU | Intel® Xeon® 6 | 288 cores |
 | Memory | 12x 64GiB DDR5-4800 | 768GiB RAM |
 | CXL Device | 2x CXL 2.0 (E3.S) | 400GiB capacity |
-| PCIe | PCIe Gen5 x2 | Per slot (backplane limit) |
 | OS | RHEL 9/10 Compatible | linux-6.6 |
+
 ## 2. BIOS & Topology
 First, make sure BIOS has enabled CXL support. Refer to platform manuals, and an example configuration could be like:
 1. Turn on/off Intel® Flat Memory Mode as here is on a Xeon6 Processor.
@@ -130,6 +129,7 @@ While these CXL SCM devices are capable of operating as CXL PMem DAX device (`fs
 ## 5. Benchmarks
 Below are some standard benchmarking analysis.
 ### a. Single thread load latency - lmbench
+
 | Hierarchy | Size | Sequential (Prefetch) | Random (No PF) |
 | :--- | :--- | :--- | :--- |
 | **L1d Cache** | 32KiB | 1.12ns | 1.12ns |
@@ -235,6 +235,7 @@ Run Intel MLC for more system level bandwidth and latency benchmarks:
  - With random buffer (no prefetch) and no SMT: `mlc -r -X`
 
 Latency numbers are similar to previous results from `lmbench's lat_mem_rd`:
+
 | idle latency | numa 0 (DRAM) | numa 1 (CXL) | numa 2 (CXL) |
 | :--- | :--- | :--- | :--- |
 | default | 143.5ns | 621ns | 620.7ns |
@@ -243,6 +244,7 @@ Latency numbers are similar to previous results from `lmbench's lat_mem_rd`:
 | -r -X | 156.5ns | 624.6ns | 624.5ns |
 
 The theoretical bandwidth from a CXL-2.0 PCIe-gen5 32GT/s x2 is around 7.4GB/s, and here we get around 6.5GB/s. Max bandwidth may be limited by the x2 backplane, but the SCM medium is still the major constraint, not the interface.
+
 | Max BW (base 10) | numa 0 (DRAM) | numa 1 (CXL) | numa 2 (CXL) |
 | :--- | :--- | :--- | :--- |
 | default | 400.8GB/s | 6.5GB/s | 6.1GB/s |
@@ -251,6 +253,7 @@ The theoretical bandwidth from a CXL-2.0 PCIe-gen5 32GT/s x2 is around 7.4GB/s, 
 | -r -X | 400.6GB/s | 6.1GB/s | 6.1GB/s |
 
 The CXL's NUMA nodes are CPU-less, so don't have c2c latency data as there's no PE.
+
 | c2c latency | Local Socket L2->L2 HIT | HITM |
 | :--- | :--- | :--- |
 | default | 108.8ns | 109ns |
@@ -266,7 +269,7 @@ To evaluate real-world impact, benchmark in-memory database `Redis`.
 
 > Redis server v=7.2.7 sha=00000000:0 malloc=jemalloc-5.3.0 bits=64 build=5e1520dc02ce3c24
 
-Bind `redis-server` to CXL node via `numactl --membind`, and run built-in `redis-benchmark` locally from DRAM numa node 0.
+Bind `redis-server` to CXL node via `numactl --membind`, and run built-in `redis-benchmark` locally from node 0.
 
 > numactl -C 144-175 -m 0 redis-benchmark -c 100 -d 1024 -t set,get,incr,hset,sadd --threads 8 -n 10000000 -P 100 -r 10000000
 
