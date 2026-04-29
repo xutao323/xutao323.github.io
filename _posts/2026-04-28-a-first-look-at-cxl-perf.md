@@ -40,7 +40,7 @@ After system boot, check `dmesg` for early CXL initialization logs like ACPI HMA
 [   19.420016]   disable default DRAM node performance based abstract distance algorithm.
 ```
 
-On `linux-6.6`, CXL memory expanders appear as distinct NUMA nodes without local CPUs. 
+On `linux-6.6`, CXL memory expanders appear as distinct NUMA nodes without local CPU. 
 ```
 # numactl -H
 available: 3 nodes (0-2)
@@ -68,8 +68,10 @@ While the CXL devices support PCIe Gen5 x8, the current E3.S backplane in my mac
 This bottleneck means we are testing the SCM media latency rather than the CXL throughput. Production CXL devices will likely feature 10x the capacity of these early 200GiB samples, meaning the actual bandwidth-per-GiB ratio should remain quite similar. All things considered, this is still a fair real user scenario to start benchmarking before I get a x8 backplane.
 ## 4. CXL device status
 Check CXL device status with `ndctl` and `cxl-cli` tools via linux in-tree drivers.
+
 `cxl-cli`
-`cxl-cli` is the main cmdline tool for managing CXL device. Because Linux CXL drivers change rapidly and carry some complexity from legacy Optane support, it wasn't plug-and-play. After digging through driver logs, tweaking BIOS settings, and even submitting a bug fix ([#298](https://github.com/pmem/ndctl/issues/298)), I can see two memory regions for the two CXL devices:
+
+`cxl-cli` is the main tool for managing CXL device. Because Linux CXL drivers change rapidly and carry some complexity from legacy Optane support, it wasn't plug-and-play. After digging through driver logs, tweaking BIOS settings, and even submitting a bug fix ([#298](https://github.com/pmem/ndctl/issues/298)), I can see two memory regions for the two CXL devices:
 ```
 # cxl version
 78
@@ -96,6 +98,7 @@ Check CXL device status with `ndctl` and `cxl-cli` tools via linux in-tree drive
 ]
 ```
 `ndctl`
+
 Similarly, `ndctl` is able to see the two regions passed up from CXL modules.
 ```
 # ndctl version
@@ -125,6 +128,7 @@ Similarly, `ndctl` is able to see the two regions passed up from CXL modules.
 ]
 ```
 `daxctl`
+
 While these CXL SCM devices are capable of operating as CXL PMem DAX device (`fsdax` or `devdax`), I skipped DAX here as initial focus is on the CXL system memory tier.
 ## 5. Benchmarks
 Below are some standard benchmarking analysis.
@@ -132,11 +136,11 @@ Below are some standard benchmarking analysis.
 
 | Hierarchy | Size | Sequential (Prefetch) | Random (No PF) |
 | :--- | :--- | :--- | :--- |
-| **L1d Cache** | 32KiB | 1.12ns | 1.12ns |
-| **L2 Cache** | 4MiB | 7.41ns | 10.75ns |
-| **L3 Cache (LLC)** | 216MiB | 23ns | 73ns |
-| **Local node (DRAM)** | 768GiB | 67ns | 211ns |
-| **Remote node (CXL)** | 200GiB | 296ns | 685ns |
+| L1d Cache | 32KiB | 1.12ns | 1.12ns |
+| L2 Cache | 4MiB | 7.41ns | 10.75ns |
+| L3 Cache (LLC) | 216MiB | 23ns | 73ns |
+| Local node (DRAM) | 768GiB | 67ns | 211ns |
+| Remote node (CXL) | 200GiB | 296ns | 685ns |
 
 As expected, access latency from the CXL SCM device is around `685ns`, 3x of local DRAM's `211ns`. Although the backplane is limited at PCIe gen5 x2 bandwidth, the main latency shall come from the SCM medium. And it's the end-to-end round-trip latency from CPU to CXL device medium, as seen by system software.
 
@@ -289,7 +293,7 @@ Cleanup for each run, and check memory usage by `redis-cli`:
 > redis-cli -i 1 --stat
 
 The SET/GET benchmarks below illustrate RPS throughput (Y-axis) relative to the active memory usage reported by `redis-cli --stat` (X-axis).
-1. **Small datasets (20MB - 200MB)**: Surprisingly, bind to CXL memory shows better result. I suspect it's due to the `jemalloc` caching allocator, combined with the fact that file maps are still utilizing DRAM (as verified via `/proc/PID/smaps`).
+1. **Small datasets (20MB - 200MB)**: Surprisingly, bind to CXL memory shows better result. I guess it's due to the `jemalloc` caching allocator, combined with the fact that file maps are still utilizing DRAM (as verified via `/proc/PID/smaps`).
 2. **Large datasets (2GB - 10GB)**: as memory usage increases, the heap workload became the dominant factor, and we see real impact from CXL memory. CXL throughput dropped to **half** of DRAM. This aligns with above findings of the **3x** raw CXL access latency compared to DRAM. Note this simulates the worse case where Redis is restricted solely to the CXL memory tier.
 
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 550" width="80%" height="80%" style="font-family: system-ui, -apple-system, sans-serif;">
@@ -371,7 +375,7 @@ The SET/GET benchmarks below illustrate RPS throughput (Y-axis) relative to the 
 </svg>
 
 Extend to compare `SET, GET, INCR, SADD, HSET` operations, using same key range of `-r 10M` and resulting Redis memory usage is now `30GiB`.
-1. **SET/GET/INCR/HSET**: clearly `memory-bound` workload, binding Redis to CXL memory tier results in **half** of the throughput seen from DRAM.
+1. **SET/GET/INCR/HSET**: clearly `memory-bound` workload, binding Redis to CXL memory tier results in **less than half** of the throughput seen from DRAM.
 2. **SADD**: more `compute-bound` and thus less impacted, CXL memory throughput is **74%** of DRAM baseline.
 
 <svg xmlns="http://www.w3.org/2000/svg" width="80%" height="80%" style="font-family:system-ui,-apple-system,sans-serif" viewBox="0 0 900 520">
