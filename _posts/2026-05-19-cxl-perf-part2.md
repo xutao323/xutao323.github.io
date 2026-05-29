@@ -184,6 +184,7 @@ Comparing with data from last time:
 | -r -X | 144.4ns | 171.2ns | 605.4ns | 603.5ns |
 
 SNC partition significantly optimized core-to-core (c2c) cache latency from 109ns (previous UMA data) to 80ns:
+
 | c2c latency | Local Socket L2->L2 HIT | HITM |
 | :--- | :--- | :--- |
 | default | 79.5ns | 79.7ns |
@@ -286,5 +287,11 @@ Observations:
     <text x="783" y="368.0">231</text>
   </g>
 </svg>
+
+## 6. Future work
+With the above preliminary analysis of the CXL 2.0 SCM device, more work can be done in the following areas:
+ - **Storage DAX**: These CXL SCM devices are capable of operating as a CXL memory device, a CXL PMem DAX device, or a combination of both. This flexibility is a unique feature that maximizes system resource utilization across both memory and storage. For example, recent NVIDIA GTC introduced CMX™ (Context Memory Storage) as a "G3.5" tier sitting between G3 local SSDs and G4 shared object/file storage. Similarly, CXL can be viewed as a "G2.5" layer in this architecture.
+ - **CXL 3.0 PMU**: Although we have captured the end-to-end latency for this CXL 2.0 device, a dedicated PMU is unfortunately only defined starting with the CXL 3.0 specification. However, we can still obtain a latency breakdown and distribution by leveraging the PCIe PMUs in the processor's I/O die.
+ - **More workloads**: Evaluate performance across emerging memory-demanding workloads, such as MLPerf Storage v2.0 checkpointing and KV cache management, etc.
 
 ----
